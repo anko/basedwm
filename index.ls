@@ -8,6 +8,7 @@ X     = display.client
 root  = display.screen[0].root
 
 managed-ids = []
+on-top-ids = []
 
 # Store window IDs so we don't need to tree-iterate when moving all windows.
 # This means we can also properly ignore Hudkit so it's "stuck to the screen".
@@ -17,6 +18,13 @@ drag =
   start  : x : 0 y : 0
 
 focus = null
+
+update-on-top = ->
+  on-top-ids.for-each X.Raise-window
+
+raise = (id) ->
+  X.Raise-window id
+  update-on-top!
 
 set-focus = (id) ->
   focus := id
@@ -58,8 +66,12 @@ manage-window = (id) ->
   return if attrs.override-redirect # Leave pop-ups alone
 
   e, class-name <- get-class id # Leave Hudkit alone
-  return if e or class-name.1 is \Hudkit
+  return if e
+  if class-name.1 is \Hudkit
+    on-top-ids.push id
+    return
 
+  update-on-top!
   event-mask = x11.event-mask.EnterWindow
   X.Change-window-attributes id, { event-mask }
   X.Set-input-focus id
@@ -169,3 +181,6 @@ process.stdin .pipe split \\n
         ..start
           ..x = null
           ..y = null
+    | \raise =>
+      console.log "Raising #focus"
+      raise focus
