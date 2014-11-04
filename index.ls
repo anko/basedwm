@@ -1,11 +1,16 @@
 #!/usr/bin/env lsc
 require! <[ x11 split ]>
-{ words } = require \prelude-ls
+{ words, keys } = require \prelude-ls
 
 e, display <- x11.create-client!
 
 X     = display.client
 root  = display.screen[0].root
+
+managed-ids = []
+
+# Store window IDs so we don't need to tree-iterate when moving all windows.
+# This means we can also properly ignore Hudkit so it's "stuck to the screen".
 
 drag =
   target : null
@@ -21,22 +26,25 @@ get-class = (id, cb) ->
   X.Get-property 0 id, X.atoms.WM_CLASS, X.atoms.STRING, 0, 1000000, (e, prop) ->
     cb e if e
     if prop.type = X.atoms.STRING # just in case
-      return cb null prop.data.to-string!
+      # It comes back as evilvte<null>Evilvte<null>
+      # where <null> is a 0-value null-character.
+      return cb null prop.data.to-string!split String.from-char-code 0
     else cb "Unexpected non-string WM_CLASS"
 
 move-all-by = (x, y) ->
-  e, tree <- X.Query-tree root
-  id <- tree.children.for-each
+  id <- keys managed-ids .for-each
   e, geom <- X.Get-geometry id
   X.Move-window id, geom.x-pos + x, geom.y-pos + y
 
 move-by = (id, x, y) ->
+  return if id is null or id is root
   e, geom <- X.Get-geometry id
   new-x  = geom.x-pos + x
   new-y = geom.y-pos + y
   X.Move-window id, new-x, new-y
 
 resize-by = (id, x, y) ->
+  return if id is null or id is root
   e, geom <- X.Get-geometry id
   new-width  = Math.max (geom.width + x), 50
   new-height = Math.max (geom.height + y), 50
@@ -50,17 +58,19 @@ manage-window = (id) ->
   return if attrs.override-redirect # Leave pop-ups alone
 
   e, class-name <- get-class id # Leave Hudkit alone
-  return if e or class-name is \Hudkit
+  return if e or class-name.1 is \Hudkit
 
   event-mask = x11.event-mask.EnterWindow
   X.Change-window-attributes id, { event-mask }
   X.Set-input-focus id
+  managed-ids[id] = true
 
 unmanage-window = (id) ->
   console.log "<-: #id"
   # If there's something we need to forget about this window, do it.
   if focus is id
     focus := null
+  delete managed-ids[id]
 
 X
   # Subscribe to events
@@ -90,12 +100,10 @@ X
       map-notify : 19
       map-request : 20
       configure-request : 23
-    #console.log ev
     switch ev.type
     | type.map-request       => manage-window ev.wid
     | type.configure-request =>
       break if ev.wid is root # Refuse to resize root window
-      #console.log ev
       #moveresize ev.wid, ev.width, ev.height
       #X.ResizeWindow ev.wid, ev.width, ev.height
     | type.destroy-notify    => unmanage-window ev.wid
@@ -104,10 +112,10 @@ X
 process.stdin .pipe split \\n
   .on \data (line) ->
     args = line |> words
-    #console.log args
     return unless args.length
     switch args.shift!
     | \resize =>
+      return if focus is null
       console.log "Resizing #focus"
       x = args.shift! |> Number
       y = args.shift! |> Number
@@ -123,6 +131,7 @@ process.stdin .pipe split \\n
         ..y = y
       resize-by drag.target, delta-x, delta-y
     | \move =>
+      return if focus is null
       console.log "Moving #focus"
       x = args.shift! |> Number
       y = args.shift! |> Number
@@ -139,14 +148,15 @@ process.stdin .pipe split \\n
         ..y = y
       move-by drag.target, delta-x, delta-y
     | \move-all =>
+      return if focus is null
       x = args.shift! |> Number
       y = args.shift! |> Number
       if drag.start.x is null
         drag.start
           ..x = x
           ..y = y
-      delta-x   = (x - drag.start.x) * 5
-      delta-y   = (y - drag.start.y) * 5
+      delta-x   = (x - drag.start.x) * 3
+      delta-y   = (y - drag.start.y) * 3
       console.log "Moving all by #delta-x,#delta-y"
       drag.start
         ..x = x
