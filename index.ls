@@ -40,13 +40,16 @@ get-class = (id, cb) ->
     else cb "Unexpected non-string WM_CLASS"
 
 move-all-by = (x, y) ->
+  return unless managed-ids.length
   id <- keys managed-ids .for-each
   e, geom <- X.Get-geometry id
+  return if e
   X.Move-window id, geom.x-pos + x, geom.y-pos + y
 
 move-by = (id, x, y) ->
   return if id is null or id is root
   e, geom <- X.Get-geometry id
+  return if e
   new-x  = geom.x-pos + x
   new-y = geom.y-pos + y
   X.Move-window id, new-x, new-y
@@ -54,6 +57,7 @@ move-by = (id, x, y) ->
 resize-by = (id, x, y) ->
   return if id is null or id is root
   e, geom <- X.Get-geometry id
+  return if e
   new-width  = Math.max (geom.width + x), 50
   new-height = Math.max (geom.height + y), 50
   X.Resize-window id, new-width, new-height
@@ -83,6 +87,7 @@ unmanage-window = (id) ->
   if focus is id
     focus := null
   delete managed-ids[id]
+  set-focus root
 
 X
   # Subscribe to events
@@ -160,7 +165,7 @@ process.stdin .pipe split \\n
         ..y = y
       move-by drag.target, delta-x, delta-y
     | \move-all =>
-      return if focus is null
+      return unless managed-ids.length
       x = args.shift! |> Number
       y = args.shift! |> Number
       if drag.start.x is null
