@@ -28,7 +28,8 @@ raise = (id) ->
 
 set-focus = (id) ->
   focus := id
-  X.Set-input-focus id
+  if id isnt null
+    X.Set-input-focus id
 
 get-class = (id, cb) ->
   X.Get-property 0 id, X.atoms.WM_CLASS, X.atoms.STRING, 0, 1000000, (e, prop) ->
@@ -124,7 +125,9 @@ X
       #moveresize ev.wid, ev.width, ev.height
       #X.ResizeWindow ev.wid, ev.width, ev.height
     | type.destroy-notify    => unmanage-window ev.wid
-    | type.enter-notify      => set-focus ev.wid
+    | type.enter-notify      =>
+      if ev.wid is root then set-focus null
+      else set-focus ev.wid
 
 process.stdin .pipe split \\n
   .on \data (line) ->
