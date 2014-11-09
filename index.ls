@@ -40,10 +40,19 @@ action = do
     return if id is root
     X.Raise-window id
     update-on-top!
-  destroy: (id) ->
+  forget : (id) ->
     return if id is root
     console.log "<-: #id"
     delete managed-ids[id]
+  destroy: (id) ->
+    X.Destroy-window id
+  kill: (id) ->
+
+    # We would really want to use `WM_DELETE_WINDOW` here, but node-x11 doesn't
+    # have ICCCM extensions yet, so we just terminate the client's connection
+    # and and let it clean up.
+    X.Kill-client id
+
   map : (id) -> X.Map-window id
 
 manage = (id) ->
@@ -133,17 +142,19 @@ X
       map-request : 20
       configure-request : 23
     switch type
-    | t.map-request       =>
+    | t.map-request =>
       manage wid
       action.map wid
       action.raise wid
       action.focus wid
     | t.configure-request =>
       #action.resize wid, ev.width, ev.height
-    | t.destroy-notify    =>
-      action.destroy wid
+    | t.destroy-notify =>
+      action.forget wid
       action.focus root
-    | t.enter-notify      => action.focus wid
+    | t.enter-notify =>
+      action.focus wid
+      action.raise wid
 
 process.stdin .pipe split \\n
   .on \data (line) ->
@@ -208,3 +219,6 @@ process.stdin .pipe split \\n
     | \raise =>
       console.log "Raising #focus"
       action.raise focus
+    | \kill =>
+      console.log "Killing #focus"
+      action.kill focus
