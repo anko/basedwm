@@ -45,12 +45,11 @@ action = do
     console.log "<-: #id"
     delete managed-ids[id]
   destroy: (id) ->
-    X.Destroy-window id
-  kill: (id) ->
-
     # We would really want to use `WM_DELETE_WINDOW` here, but node-x11 doesn't
     # have ICCCM extensions yet, so we just terminate the client's connection
     # and and let it clean up.
+    X.Destroy-window id
+  kill: (id) ->
     X.Kill-client id
 
   map : (id) -> X.Map-window id
@@ -222,3 +221,6 @@ process.stdin .pipe split \\n
     | \kill =>
       console.log "Killing #focus"
       action.kill focus
+    | \destroy =>
+      console.log "Destroying #focus"
+      action.destroy focus
