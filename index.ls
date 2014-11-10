@@ -1,5 +1,5 @@
 #!/usr/bin/env lsc
-require! <[ x11 split ]>
+require! <[ x11 split async ]>
 { words, keys } = require \prelude-ls
 
 e, display <- x11.create-client!
@@ -207,7 +207,14 @@ process.stdin .pipe split \\n
       drag.start
         ..x = x
         ..y = y
-      keys managed-ids .for-each -> action.move it, delta-x, delta-y
+      # Move every window
+      # (In parallel for efficiency)
+      async.each do
+        keys managed-ids
+        (item, cb) ->
+          action.move item, delta-x, delta-y
+          cb!
+        -> # We don't care when it finishes.
     | \reset =>
       console.log "RESET"
       drag
