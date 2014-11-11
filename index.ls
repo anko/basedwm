@@ -1,6 +1,15 @@
 #!/usr/bin/env lsc
 require! <[ x11 split async ]>
 { words, keys } = require \prelude-ls
+{ spawn } = require \child_process
+
+argv = require \yargs .argv
+
+command-stream = do
+  switch
+  | argv.command-file and argv.command-file isnt \- =>
+    (spawn \tail [ \-F argv.command-file ]) .stdout
+  | otherwise => process.stdin
 
 e, display <- x11.create-client!
 
@@ -155,7 +164,7 @@ X
       action.focus wid
       action.raise wid
 
-process.stdin .pipe split \\n
+command-stream .pipe split \\n
   .on \data (line) ->
     args = line |> words
     return unless args.length
