@@ -18,7 +18,7 @@ e, display <- x11.create-client!
 X     = display.client
 root  = display.screen[0].root
 
-managed-data = [] # Indexed with X window ID
+managed-data = {} # Indexed with X window ID
 on-top-ids  = []
 
 focus = root
@@ -105,8 +105,13 @@ manage = (id) ->
       event-mask = x11.event-mask.EnterWindow
       X.Change-window-attributes id, { event-mask }
 
-    # Remember window
-    managed-data[id] = true
+    # Remember window with initial position and size
+    e, geom <- X.Get-geometry id
+    managed-data[id] =
+      x : geom.x-pos
+      y : geom.y-pos
+      width : geom.width
+      height : geom.height
 
 
 
@@ -150,7 +155,9 @@ X
       unmap-notify : 18
       map-notify : 19
       map-request : 20
+      configure-notify : 22
       configure-request : 23
+      client-message : 332
     switch type
     | t.map-request =>
       manage wid
@@ -165,6 +172,15 @@ X
     | t.enter-notify =>
       action.focus wid
       action.raise wid
+    | t.map-notify => # nothing
+    | t.unmap-notify => # nothing
+    | t.create-notify => # nothing
+    | t.client-message => # nothing
+    | t.configure-notify =>
+      if managed-data[ev.wid1]
+        that{ x,y,width,height } = ev
+    | otherwise =>
+      verbose-log "Unknown type" ev
 
 command-stream .pipe split \\n
   .on \data (line) ->
@@ -205,7 +221,8 @@ command-stream .pipe split \\n
         ..y = y
       action.move drag.target, delta-x, delta-y
     | \move-all =>
-      return unless managed-data.length
+      ids = keys managed-data
+      return unless ids.length
       x = args.shift! |> Number
       y = args.shift! |> Number
       if drag.start.x is null
@@ -221,7 +238,7 @@ command-stream .pipe split \\n
       # Move every window
       # (In parallel for efficiency)
       async.each do
-        keys managed-data
+        ids
         (item, cb) ->
           action.move item, delta-x, delta-y
           cb!
