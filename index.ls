@@ -68,13 +68,15 @@ action = do
 manage = (id) ->
 
   return Error "Null window ID" unless id? # Sanity
-  verbose-log "->: #id"
-
   e, attr <- X.Get-window-attributes id
   if e
     console.error "Error getting window attributes (wid #id): #e"
     return
-  return if attr.override-redirect # Ignore pop-ups
+  if attr.override-redirect # Ignore pop-ups
+    verbose-log "Ignoring #id"
+    return
+
+  verbose-log "->: #id"
 
   get-wm-class = (id, cb) ->
     e, prop <- X.Get-property 0 id, X.atoms.WM_CLASS, X.atoms.STRING, 0, 10000000
@@ -166,14 +168,14 @@ X
       action.focus wid
     | t.configure-request =>
       #action.resize wid, ev.width, ev.height
-    | t.destroy-notify =>
+    | t.destroy-notify => fallthrough
+    | t.unmap-notify =>
       action.forget wid
       action.focus root
     | t.enter-notify =>
       action.focus wid
       action.raise wid
     | t.map-notify => # nothing
-    | t.unmap-notify => # nothing
     | t.create-notify => # nothing
     | t.client-message => # nothing
     | t.configure-notify =>
