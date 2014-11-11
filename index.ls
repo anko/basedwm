@@ -189,6 +189,32 @@ command-stream .pipe split \\n
     switch args.shift!
     | \resize =>
       return if focus is root
+      verbose-log "Moving #focus"
+      x = args.shift! |> Number
+      y = args.shift! |> Number
+      action.resize focus, x, y
+    | \move =>
+      return if focus is root
+      verbose-log "Moving #focus"
+      x = args.shift! |> Number
+      y = args.shift! |> Number
+      action.move focus, x, y
+    | \move-all =>
+      ids = keys managed-data
+      return unless ids.length
+      verbose-log "Moving #focus"
+      x = args.shift! |> Number
+      y = args.shift! |> Number
+      # Move every window
+      # (In parallel for efficiency)
+      async.each do
+        ids
+        (item, cb) ->
+          action.move item, x, y
+          cb!
+        -> # We don't care when it finishes.
+    | \pointer-resize =>
+      return if focus is root
       verbose-log "Resizing #focus"
       x = args.shift! |> Number
       y = args.shift! |> Number
@@ -203,9 +229,9 @@ command-stream .pipe split \\n
         ..x = x
         ..y = y
       action.resize drag.target, delta-x, delta-y
-    | \move =>
+    | \pointer-move =>
       return if focus is root
-      verbose-log "Moving #focus"
+      verbose-log "Pointer-moving #focus"
       x = args.shift! |> Number
       y = args.shift! |> Number
       if drag.target is null
@@ -220,7 +246,7 @@ command-stream .pipe split \\n
         ..x = x
         ..y = y
       action.move drag.target, delta-x, delta-y
-    | \move-all =>
+    | \pointer-move-all =>
       ids = keys managed-data
       return unless ids.length
       x = args.shift! |> Number
