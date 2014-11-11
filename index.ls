@@ -5,6 +5,8 @@ require! <[ x11 split async ]>
 
 argv = require \yargs .argv
 
+verbose-log = if argv.verbose then console.log else -># no-op
+
 command-stream = do
   switch
   | argv.command-file and argv.command-file isnt \- =>
@@ -51,7 +53,7 @@ action = do
     update-on-top!
   forget : (id) ->
     return if id is root
-    console.log "<-: #id"
+    verbose-log "<-: #id"
     delete managed-data[id]
   destroy: (id) ->
     # We would really want to use `WM_DELETE_WINDOW` here, but node-x11 doesn't
@@ -66,7 +68,7 @@ action = do
 manage = (id) ->
 
   return Error "Null window ID" unless id? # Sanity
-  console.log "->: #id"
+  verbose-log "->: #id"
 
   e, attr <- X.Get-window-attributes id
   if e
@@ -171,7 +173,7 @@ command-stream .pipe split \\n
     switch args.shift!
     | \resize =>
       return if focus is root
-      console.log "Resizing #focus"
+      verbose-log "Resizing #focus"
       x = args.shift! |> Number
       y = args.shift! |> Number
       if drag.target is null
@@ -187,7 +189,7 @@ command-stream .pipe split \\n
       action.resize drag.target, delta-x, delta-y
     | \move =>
       return if focus is root
-      console.log "Moving #focus"
+      verbose-log "Moving #focus"
       x = args.shift! |> Number
       y = args.shift! |> Number
       if drag.target is null
@@ -197,7 +199,7 @@ command-stream .pipe split \\n
           ..start.y = y
       delta-x   = x - drag.start.x
       delta-y   = y - drag.start.y
-      console.log "Moving #{drag.target} by #delta-x,#delta-y"
+      verbose-log "Moving #{drag.target} by #delta-x,#delta-y"
       drag.start
         ..x = x
         ..y = y
@@ -212,7 +214,7 @@ command-stream .pipe split \\n
           ..y = y
       delta-x   = (x - drag.start.x) * 3
       delta-y   = (y - drag.start.y) * 3
-      console.log "Moving all by #delta-x,#delta-y"
+      verbose-log "Moving all by #delta-x,#delta-y"
       drag.start
         ..x = x
         ..y = y
@@ -225,20 +227,20 @@ command-stream .pipe split \\n
           cb!
         -> # We don't care when it finishes.
     | \reset =>
-      console.log "RESET"
+      verbose-log "RESET"
       drag
         ..target = null
         ..start
           ..x = null
           ..y = null
     | \raise =>
-      console.log "Raising #focus"
+      verbose-log "Raising #focus"
       action.raise focus
     | \kill =>
-      console.log "Killing #focus"
+      verbose-log "Killing #focus"
       action.kill focus
     | \destroy =>
-      console.log "Destroying #focus"
+      verbose-log "Destroying #focus"
       action.destroy focus
     | \exit =>
       process.exit 0
