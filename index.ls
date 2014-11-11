@@ -240,3 +240,5 @@ command-stream .pipe split \\n
     | \destroy =>
       console.log "Destroying #focus"
       action.destroy focus
+    | \exit =>
+      process.exit 0
