@@ -16,7 +16,7 @@ e, display <- x11.create-client!
 X     = display.client
 root  = display.screen[0].root
 
-managed-ids = []
+managed-data = [] # Indexed with X window ID
 on-top-ids  = []
 
 focus = root
@@ -52,7 +52,7 @@ action = do
   forget : (id) ->
     return if id is root
     console.log "<-: #id"
-    delete managed-ids[id]
+    delete managed-data[id]
   destroy: (id) ->
     # We would really want to use `WM_DELETE_WINDOW` here, but node-x11 doesn't
     # have ICCCM extensions yet, so we just terminate the client's connection
@@ -104,7 +104,7 @@ manage = (id) ->
       X.Change-window-attributes id, { event-mask }
 
     # Remember window
-    managed-ids[id] = true
+    managed-data[id] = true
 
 
 
@@ -203,7 +203,7 @@ command-stream .pipe split \\n
         ..y = y
       action.move drag.target, delta-x, delta-y
     | \move-all =>
-      return unless managed-ids.length
+      return unless managed-data.length
       x = args.shift! |> Number
       y = args.shift! |> Number
       if drag.start.x is null
@@ -219,7 +219,7 @@ command-stream .pipe split \\n
       # Move every window
       # (In parallel for efficiency)
       async.each do
-        keys managed-ids
+        keys managed-data
         (item, cb) ->
           action.move item, delta-x, delta-y
           cb!
