@@ -151,44 +151,31 @@ X
 
   # Handle incoming events
   ..on 'event' (ev) ->
-    { type, wid } = ev
-    t =
-      enter-notify : 7
-      expose : 12
-      create-notify : 16
-      destroy-notify : 17
-      unmap-notify : 18
-      map-notify : 19
-      map-request : 20
-      configure-notify : 22
-      configure-request : 23
-      client-message : 332
-    switch type
-    | t.map-request =>
-      action.map wid
-      e, accepted <- manage wid
+    switch ev.name
+    | \MapRequest =>
+      action.map ev.wid
+      e, accepted <- manage ev.wid
       throw e if e
       if accepted
-        action.raise wid
-        action.focus wid
-    | t.configure-request =>
-      #action.resize wid, ev.width, ev.height
-    | t.destroy-notify => fallthrough
-    | t.unmap-notify =>
-      action.forget wid
-      if focus is wid
+        action.raise ev.wid
+        action.focus ev.wid
+    | \ConfigureRequest =>
+      #action.resize ev.wid, ev.width, ev.height
+    | \DestroyNotify => fallthrough
+    | \UnmapNotify =>
+      action.forget ev.wid
+      if focus is ev.wid
         action.focus root
-    | t.enter-notify =>
-      action.focus wid
-      #action.raise wid
-    | t.map-notify => # nothing
-    | t.create-notify => # nothing
-    | t.client-message => # nothing
-    | t.configure-notify =>
+    | \EnterNotify =>
+      action.focus ev.wid
+      #action.raise ev.wid
+    | \MapNotify => # nothing
+    | \CreateNotify => # nothing
+    | \ClientMessage => # nothing
+    | \ConfigureNotify =>
       if managed-data[ev.wid1]
         that{ x,y,width,height } = ev
-    | otherwise =>
-      verbose-log "Unknown type" ev
+    | otherwise => verbose-log "Unknown type" ev
 
 command-stream .pipe split \\n
   .on \data (line) ->
