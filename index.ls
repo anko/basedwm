@@ -65,22 +65,22 @@ action = do
 
   map : (id) -> X.Map-window id
 
-manage = (id) ->
+manage = (id, cb=->) ->
 
   throw new Error "Null window ID" unless id? # Sanity
   e, attr <- X.Get-window-attributes id
   if e
     console.error "Error getting window attributes (wid #id): #e"
-    return
+    return cb e
   if attr.override-redirect # Ignore pop-ups
     verbose-log "Ignoring #id"
-    return
+    return cb null false
 
   verbose-log "->: #id"
 
-  get-wm-class = (id, cb) ->
+  get-wm-class = (id, class-cb) ->
     e, prop <- X.Get-property 0 id, X.atoms.WM_CLASS, X.atoms.STRING, 0, 10000000
-    return cb e if e
+    return class-cb e if e
     switch prop.type
     | X.atoms.STRING =>
       # Data format:
@@ -90,17 +90,19 @@ manage = (id) ->
       # where `<null>` is a null-character.
       null-char = String.from-char-code 0
       strings = prop.data.to-string!split null-char
-      return cb null program : strings.0, class : strings.1
-    | 0 => return cb null [ "" "" ] # No WM_CLASS set
-    | _ => return cb "Unexpected non-string WM_CLASS"
+      return class-cb null program : strings.0, class : strings.1
+    | 0 => return class-cb null [ "" "" ] # No WM_CLASS set
+    | _ => return class-cb "Unexpected non-string WM_CLASS"
 
   # Put Hudkit on top
   e, attr <- get-wm-class id
   if e
     console.error "Error getting window class (wid #id): #e"
-    return
+    return cb e
   switch attr.class
-  | \Hudkit   => on-top-ids.push id
+  | \Hudkit   =>
+    on-top-ids.push id
+    return cb null false
   | otherwise =>
     # Subscribe to window entry events
     do
@@ -108,12 +110,13 @@ manage = (id) ->
       X.Change-window-attributes id, { event-mask }
 
     # Remember window with initial position and size
-    e, geom <- X.Get-geometry id
-    managed-data[id] =
-      x : geom.x-pos
-      y : geom.y-pos
-      width : geom.width
-      height : geom.height
+    X.Get-geometry id, (e, geom) ->
+      managed-data[id] =
+        x : geom.x-pos
+        y : geom.y-pos
+        width : geom.width
+        height : geom.height
+    return cb null true
 
 
 
@@ -142,7 +145,7 @@ X
       process.exit 1
 
   # Pick up existing windows
-  ..QueryTree root, (e, tree) -> tree.children.for-each manage
+  ..QueryTree root, (e, tree) -> tree.children.for-each -> manage it
 
   ..on 'error' console.error
 
@@ -162,10 +165,12 @@ X
       client-message : 332
     switch type
     | t.map-request =>
-      manage wid
       action.map wid
-      action.raise wid
-      action.focus wid
+      e, accepted <- manage wid
+      throw Error e if e
+      if accepted
+        action.raise wid
+        action.focus wid
     | t.configure-request =>
       #action.resize wid, ev.width, ev.height
     | t.destroy-notify => fallthrough
