@@ -180,7 +180,7 @@ X
         action.focus root
     | t.enter-notify =>
       action.focus wid
-      action.raise wid
+      #action.raise wid
     | t.map-notify => # nothing
     | t.create-notify => # nothing
     | t.client-message => # nothing
@@ -287,6 +287,14 @@ command-stream .pipe split \\n
     | \raise =>
       verbose-log "Raising #focus"
       action.raise focus
+    | \pointer-raise =>
+      # Find and raise the window under the pointer
+      e, res <- X.Query-pointer root
+      throw e if e
+      { child } = res
+      return unless child # Ignore clicks on root window
+      verbose-log "Raising #child"
+      action.raise child
     | \kill =>
       verbose-log "Killing #focus"
       action.kill focus
