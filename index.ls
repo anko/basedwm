@@ -171,7 +171,8 @@ X
     | t.destroy-notify => fallthrough
     | t.unmap-notify =>
       action.forget wid
-      action.focus root
+      if focus is wid
+        action.focus root
     | t.enter-notify =>
       action.focus wid
       action.raise wid
