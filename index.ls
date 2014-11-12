@@ -167,7 +167,7 @@ X
     | t.map-request =>
       action.map wid
       e, accepted <- manage wid
-      throw Error e if e
+      throw e if e
       if accepted
         action.raise wid
         action.focus wid
