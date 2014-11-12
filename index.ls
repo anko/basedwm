@@ -67,7 +67,7 @@ action = do
 
 manage = (id) ->
 
-  return Error "Null window ID" unless id? # Sanity
+  throw new Error "Null window ID" unless id? # Sanity
   e, attr <- X.Get-window-attributes id
   if e
     console.error "Error getting window attributes (wid #id): #e"
