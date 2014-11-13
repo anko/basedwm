@@ -14,6 +14,9 @@ command-stream = do
   | otherwise => process.stdin
 
 e, display <- x11.create-client!
+if e
+  console.error "Could not create X client."
+  process.exit 1
 
 X     = display.client
 root  = display.screen[0].root
