@@ -154,13 +154,20 @@ event-mask = x11.event-mask.StructureNotify
   .|. x11.event-mask.SubstructureNotify
   .|. x11.event-mask.SubstructureRedirect
 X
+  # To prevent race conditions with node-ewmh also changing the root window
+  # attributes, we grab the server for the duration of that change.
+  ..Grab-server!
   # Subscribe to events
-  ..Change-window-attributes root, { event-mask }, (err) ->
-    # This callback isn't called on success; only on error.
-    # I think it's a bug, but let's roll with it for now.
-    if err.error is 10
-      console.error 'Error: another window manager already running.'
-      process.exit 1
+  ..Get-window-attributes root, (e, attrs) ->
+    throw e if e
+    event-mask .|.= attrs.event-mask
+    X.Change-window-attributes root, { event-mask }, (err) ->
+      # This callback isn't called on success; only on error.
+      # I think it's a bug, but let's roll with it for now.
+      if err.error is 10
+        console.error 'Error: another window manager already running.'
+        process.exit 1
+  ..Ungrab-server!
 
   # Pick up existing windows
   ..QueryTree root, (e, tree) -> tree.children.for-each -> manage it
