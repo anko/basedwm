@@ -21,6 +21,19 @@ if e
 X     = display.client
 root  = display.screen[0].root
 
+do
+  # `node-ewmh` currently (bug) expects these atoms to be defined in
+  # `node-x11`'s atom cache and fails if they aren't.
+
+  atom-names = <[ WM_PROTOCOLS WM_DELETE_WINDOW ]>
+  e, atom-values <- async.map do
+    atom-names
+    (atom-name, cb) ->
+      X.InternAtom do
+        false # create it if it doesn't exist
+        atom-name
+        cb
+
 ewmh-client = new ewmh X, root
 
 managed-data = {} # Indexed with X window ID
