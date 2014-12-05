@@ -1,5 +1,5 @@
 #!/usr/bin/env lsc
-require! <[ x11 split async ]>
+require! <[ x11 split async ewmh ]>
 { words, keys } = require \prelude-ls
 { spawn } = require \child_process
 
@@ -20,6 +20,21 @@ if e
 
 X     = display.client
 root  = display.screen[0].root
+
+do
+  # `node-ewmh` currently (bug) expects these atoms to be defined in
+  # `node-x11`'s atom cache and fails if they aren't.
+
+  atom-names = <[ WM_PROTOCOLS WM_DELETE_WINDOW ]>
+  e, atom-values <- async.map do
+    atom-names
+    (atom-name, cb) ->
+      X.InternAtom do
+        false # create it if it doesn't exist
+        atom-name
+        cb
+
+ewmh-client = new ewmh X, root
 
 managed-data = {} # Indexed with X window ID
 on-top-ids  = []
@@ -62,7 +77,7 @@ action = do
     # We would really want to use `WM_DELETE_WINDOW` here, but node-x11 doesn't
     # have ICCCM extensions yet, so we just terminate the client's connection
     # and and let it clean up.
-    X.Destroy-window id
+    ewmh-client.close_window id, true # use delete protocol
   kill: (id) ->
     X.Kill-client id
 
