@@ -1,5 +1,5 @@
 #!/usr/bin/env lsc
-require! <[ x11 split async ]>
+require! <[ x11 split async ewmh ]>
 { words, keys } = require \prelude-ls
 { spawn } = require \child_process
 
@@ -20,6 +20,8 @@ if e
 
 X     = display.client
 root  = display.screen[0].root
+
+ewmh-client = new ewmh X, root
 
 managed-data = {} # Indexed with X window ID
 on-top-ids  = []
@@ -62,7 +64,7 @@ action = do
     # We would really want to use `WM_DELETE_WINDOW` here, but node-x11 doesn't
     # have ICCCM extensions yet, so we just terminate the client's connection
     # and and let it clean up.
-    X.Destroy-window id
+    ewmh-client.close_window id, true # use delete protocol
   kill: (id) ->
     X.Kill-client id
 
