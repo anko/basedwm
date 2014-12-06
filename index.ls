@@ -11,12 +11,6 @@ exit = (error-code=0, error-message="Unspecified error") ->
   console.error error-message if error-code
   process.exit error-code
 
-command-stream = do
-  switch
-  | argv.command-file and argv.command-file isnt \- =>
-    (spawn \tail [ \-F argv.command-file ]) .stdout
-  | otherwise => process.stdin
-
 e, display <- x11.create-client!
 if e
   exit 1 "Could not create X client."
@@ -204,116 +198,121 @@ X
         that{ x,y,width,height } = ev
     | otherwise => verbose-log "Unknown type" ev
 
-command-stream .pipe split \\n
-  .on \data (line) ->
-    args = line |> words
-    return unless args.length
-    switch args.shift!
-    | \resize =>
-      return if focus is root
-      verbose-log "Moving #focus"
-      x = args.shift! |> Number
-      y = args.shift! |> Number
-      action.resize focus, x, y
-    | \move =>
-      return if focus is root
-      verbose-log "Moving #focus"
-      x = args.shift! |> Number
-      y = args.shift! |> Number
-      action.move focus, x, y
-    | \move-all =>
-      ids = keys managed-data
-      return unless ids.length
-      verbose-log "Moving #focus"
-      x = args.shift! |> Number
-      y = args.shift! |> Number
-      # Move every window
-      # (In parallel for efficiency)
-      async.each do
-        ids
-        (item, cb) ->
-          action.move item, x, y
-          cb!
-        -> # We don't care when it finishes.
-    | \pointer-resize =>
-      return if focus is root
-      verbose-log "Resizing #focus"
-      x = args.shift! |> Number
-      y = args.shift! |> Number
-      if drag.target is null
-        drag
-          ..target  = focus
-          ..start.x = x
-          ..start.y = y
-      delta-x   = x - drag.start.x
-      delta-y   = y - drag.start.y
-      drag.start
-        ..x = x
-        ..y = y
-      action.resize drag.target, delta-x, delta-y
-    | \pointer-move =>
-      return if focus is root
-      verbose-log "Pointer-moving #focus"
-      x = args.shift! |> Number
-      y = args.shift! |> Number
-      if drag.target is null
-        drag
-          ..target = focus
-          ..start.x = x
-          ..start.y = y
-      delta-x   = x - drag.start.x
-      delta-y   = y - drag.start.y
-      verbose-log "Moving #{drag.target} by #delta-x,#delta-y"
-      drag.start
-        ..x = x
-        ..y = y
-      action.move drag.target, delta-x, delta-y
-    | \pointer-move-all =>
-      ids = keys managed-data
-      return unless ids.length
-      x = args.shift! |> Number
-      y = args.shift! |> Number
-      if drag.start.x is null
-        drag.start
-          ..x = x
-          ..y = y
-      delta-x   = (x - drag.start.x) * 3
-      delta-y   = (y - drag.start.y) * 3
-      verbose-log "Moving all by #delta-x,#delta-y"
-      drag.start
-        ..x = x
-        ..y = y
-      # Move every window
-      # (In parallel for efficiency)
-      async.each do
-        ids
-        (item, cb) ->
-          action.move item, delta-x, delta-y
-          cb!
-        -> # We don't care when it finishes.
-    | \reset =>
-      verbose-log "RESET"
+command = (line) ->
+  args = line |> words
+  return unless args.length
+  switch args.shift!
+  | \resize =>
+    return if focus is root
+    verbose-log "Moving #focus"
+    x = args.shift! |> Number
+    y = args.shift! |> Number
+    action.resize focus, x, y
+  | \move =>
+    return if focus is root
+    verbose-log "Moving #focus"
+    x = args.shift! |> Number
+    y = args.shift! |> Number
+    action.move focus, x, y
+  | \move-all =>
+    ids = keys managed-data
+    return unless ids.length
+    verbose-log "Moving #focus"
+    x = args.shift! |> Number
+    y = args.shift! |> Number
+    # Move every window
+    # (In parallel for efficiency)
+    async.each do
+      ids
+      (item, cb) ->
+        action.move item, x, y
+        cb!
+      -> # We don't care when it finishes.
+  | \pointer-resize =>
+    return if focus is root
+    verbose-log "Resizing #focus"
+    x = args.shift! |> Number
+    y = args.shift! |> Number
+    if drag.target is null
       drag
-        ..target = null
-        ..start
-          ..x = null
-          ..y = null
-    | \raise =>
-      verbose-log "Raising #focus"
-      action.raise focus
-    | \pointer-raise =>
-      # Find and raise the window under the pointer
-      e, res <- X.Query-pointer root
-      throw e if e
-      { child } = res
-      return unless child # Ignore clicks on root window
-      verbose-log "Raising #child"
-      action.raise child
-    | \kill =>
-      verbose-log "Killing #focus"
-      action.kill focus
-    | \destroy =>
-      verbose-log "Destroying #focus"
-      action.destroy focus
-    | \exit =>
-      exit!
+        ..target  = focus
+        ..start.x = x
+        ..start.y = y
+    delta-x   = x - drag.start.x
+    delta-y   = y - drag.start.y
+    drag.start
+      ..x = x
+      ..y = y
+    action.resize drag.target, delta-x, delta-y
+  | \pointer-move =>
+    return if focus is root
+    verbose-log "Pointer-moving #focus"
+    x = args.shift! |> Number
+    y = args.shift! |> Number
+    if drag.target is null
+      drag
+        ..target = focus
+        ..start.x = x
+        ..start.y = y
+    delta-x   = x - drag.start.x
+    delta-y   = y - drag.start.y
+    verbose-log "Moving #{drag.target} by #delta-x,#delta-y"
+    drag.start
+      ..x = x
+      ..y = y
+    action.move drag.target, delta-x, delta-y
+  | \pointer-move-all =>
+    ids = keys managed-data
+    return unless ids.length
+    x = args.shift! |> Number
+    y = args.shift! |> Number
+    if drag.start.x is null
+      drag.start
+        ..x = x
+        ..y = y
+    delta-x   = (x - drag.start.x) * 3
+    delta-y   = (y - drag.start.y) * 3
+    verbose-log "Moving all by #delta-x,#delta-y"
+    drag.start
+      ..x = x
+      ..y = y
+    # Move every window
+    # (In parallel for efficiency)
+    async.each do
+      ids
+      (item, cb) ->
+        action.move item, delta-x, delta-y
+        cb!
+      -> # We don't care when it finishes.
+  | \reset =>
+    verbose-log "RESET"
+    drag
+      ..target = null
+      ..start
+        ..x = null
+        ..y = null
+  | \raise =>
+    verbose-log "Raising #focus"
+    action.raise focus
+  | \pointer-raise =>
+    # Find and raise the window under the pointer
+    e, res <- X.Query-pointer root
+    throw e if e
+    { child } = res
+    return unless child # Ignore clicks on root window
+    verbose-log "Raising #child"
+    action.raise child
+  | \kill =>
+    verbose-log "Killing #focus"
+    action.kill focus
+  | \destroy =>
+    verbose-log "Destroying #focus"
+    action.destroy focus
+  | \exit =>
+    exit!
+
+handle-line = split \\n .on \data (line) -> command line
+input-streams = []
+  ..push process.stdin
+  ..push (spawn \tail [ \-F argv.command-file ]).stdout if argv.command-file
+  ..for-each (.pipe handle-line)
