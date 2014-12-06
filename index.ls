@@ -1,13 +1,15 @@
 #!/usr/bin/env lsc
-require! <[ x11 split async ewmh ]>
+require! <[ x11 split async ewmh fs net ]>
 { words, keys } = require \prelude-ls
 { spawn } = require \child_process
+socket-path = (require \./common.ls).socket-path-template process.env.DISPLAY
 
 argv = require \yargs .argv
 
 verbose-log = if argv.verbose then console.log else -> # no-op
 
 exit = (error-code=0, error-message="Unspecified error") ->
+  <- fs.unlink socket-path # Drop error (ENOENT? Don't care.)
   console.error error-message if error-code
   process.exit error-code
 
@@ -311,8 +313,13 @@ command = (line) ->
   | \exit =>
     exit!
 
-handle-line = split \\n .on \data (line) -> command line
+handle-line = -> split \\n .on \data (line) -> command line
 input-streams = []
   ..push process.stdin
   ..push (spawn \tail [ \-F argv.command-file ]).stdout if argv.command-file
-  ..for-each (.pipe handle-line)
+  ..for-each (.pipe handle-line!)
+
+net.create-server!
+  ..on \connection (socket) ->
+    console.log "Client connected" socket
+  ..listen socket-path
