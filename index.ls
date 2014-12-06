@@ -7,6 +7,10 @@ argv = require \yargs .argv
 
 verbose-log = if argv.verbose then console.log else -># no-op
 
+exit = (error-code=0, error-message="Unspecified error") ->
+  console.error error-message if error-code
+  process.exit error-code
+
 command-stream = do
   switch
   | argv.command-file and argv.command-file isnt \- =>
@@ -15,8 +19,7 @@ command-stream = do
 
 e, display <- x11.create-client!
 if e
-  console.error "Could not create X client."
-  process.exit 1
+  exit 1 "Could not create X client."
 
 X     = display.client
 root  = display.screen[0].root
@@ -165,8 +168,7 @@ X
       # This callback isn't called on success; only on error.
       # I think it's a bug, but let's roll with it for now.
       if err.error is 10
-        console.error 'Error: another window manager already running.'
-        process.exit 1
+        exit 1 'Error: another window manager already running.'
   ..Ungrab-server!
 
   # Pick up existing windows
@@ -314,4 +316,4 @@ command-stream .pipe split \\n
       verbose-log "Destroying #focus"
       action.destroy focus
     | \exit =>
-      process.exit 0
+      exit!
