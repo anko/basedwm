@@ -5,7 +5,7 @@ require! <[ x11 split async ewmh ]>
 
 argv = require \yargs .argv
 
-verbose-log = if argv.verbose then console.log else -># no-op
+verbose-log = if argv.verbose then console.log else -> # no-op
 
 exit = (error-code=0, error-message="Unspecified error") ->
   console.error error-message if error-code
