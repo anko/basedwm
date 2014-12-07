@@ -42,8 +42,6 @@ focus = root
 
 action = do
 
-  update-on-top = -> on-top-ids.for-each X.Raise-window
-
   min-width  = 50
   min-height = 50
 
@@ -66,8 +64,7 @@ action = do
     focus := id
   raise : (id) ->
     return if id is root
-    X.Raise-window id
-    update-on-top!
+    X.Configure-window id, { sibling : on-top-ids.0, stack-mode : 1 }
   forget : (id) ->
     return if id is root
     verbose-log "<-: #id"
