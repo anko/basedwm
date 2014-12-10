@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.ls",
   "scripts": {
+    "start": "./index.ls --",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "An <an@cyan.io",
