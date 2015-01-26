@@ -18,6 +18,29 @@ if e
 X     = display.client
 root  = display.screen[0].root
 
+
+<- fs.unlink "/tmp/wmstate.sock"
+state-output = do
+  clients = {}
+  server = net.create-server!
+    ..listen "/tmp/wmstate.sock"
+    ..on \error -> console.error "Socket error: #it"
+    ..on \connection (stream) ->
+      console.log "New connection"
+
+      # The file descriptors of socket connections are unique, so that's
+      # something to use as a UUID key.
+      id = stream._handle.fd
+      clients[id] = stream
+      stream.on \close -> delete clients[id]
+
+  ->
+    console.log "loggin" it
+    for id,stream of clients
+      stream
+        ..write JSON.stringify it
+        ..write \\n
+
 do
   # `node-ewmh` currently (bug) expects these atoms to be defined in
   # `node-x11`'s atom cache and fails if they aren't.
@@ -49,6 +72,7 @@ action = do
     return Error "Could not get geometry of #id: #e" if e
     new-x = geom.x-pos + x
     new-y = geom.y-pos + y
+    state-output action : \move id : id, x : new-x, y : new-y
     X.Move-window id, new-x, new-y
   resize : (id, x, y) ->
     return if id is root
@@ -56,12 +80,15 @@ action = do
     return Error "Could not get geometry of #id: #e" if e
     new-width  = Math.max (geom.width + x), min-width
     new-height = Math.max (geom.height + y), min-height
+    state-output action : \resize id : id, width : new-width, height : new-height
     X.Resize-window id, new-width, new-height
   focus : (id) ->
     X.Set-input-focus id
+    state-output action : \focus id : id
     focus := id
   raise : (id) ->
     return if id is root
+    state-output action : \raise id : id
     X.Configure-window id, { sibling : on-top-ids.0, stack-mode : 1 }
   forget : (id) ->
     return if id is root
@@ -72,6 +99,7 @@ action = do
     # have ICCCM extensions yet, so we just terminate the client's connection
     # and and let it clean up.
     ewmh-client.close_window id, true # use delete protocol
+    state-output action : \destroy id : id
   kill: (id) ->
     X.Kill-client id
 
@@ -122,12 +150,10 @@ manage = (id, cb=->) ->
       X.Change-window-attributes id, { event-mask }
 
     # Remember window with initial position and size
-    X.Get-geometry id, (e, geom) ->
-      managed-data[id] =
-        x : geom.x-pos
-        y : geom.y-pos
-        width : geom.width
-        height : geom.height
+    e, geom <- X.Get-geometry id
+    { x-pos : x, y-pos : y, width, height } = geom
+    managed-data[id] = { x, y, width, height }
+    state-output { action : \add id, x, y, width ,height }
     return cb null true
 
 
