@@ -18,29 +18,6 @@ if e
 X     = display.client
 root  = display.screen[0].root
 
-
-<- fs.unlink "/tmp/wmstate.sock"
-state-output = do
-  clients = {}
-  server = net.create-server!
-    ..listen "/tmp/wmstate.sock"
-    ..on \error -> console.error "Socket error: #it"
-    ..on \connection (stream) ->
-      console.log "New connection"
-
-      # The file descriptors of socket connections are unique, so that's
-      # something to use as a UUID key.
-      id = stream._handle.fd
-      clients[id] = stream
-      stream.on \close -> delete clients[id]
-
-  ->
-    console.log "loggin" it
-    for id,stream of clients
-      stream
-        ..write JSON.stringify it
-        ..write \\n
-
 do
   # `node-ewmh` currently (bug) expects these atoms to be defined in
   # `node-x11`'s atom cache and fails if they aren't.
@@ -60,6 +37,34 @@ managed-data = {} # Indexed with X window ID
 on-top-ids  = []
 
 focus = root
+
+
+<- fs.unlink "/tmp/wmstate.sock"
+state-output = do
+  clients = {}
+  server = net.create-server!
+    ..listen "/tmp/wmstate.sock"
+    ..on \error -> console.error "Socket error: #it"
+    ..on \connection (stream) ->
+      console.log "New connection"
+
+      # The file descriptors of socket connections are unique, so that's
+      # something to use as a UUID key.
+      id = stream._handle.fd
+      clients[id] = stream
+      stream.on \close -> delete clients[id]
+
+      # Send initial state
+      for id,data of managed-data
+        { x, y, width, height } = data
+        stream.write JSON.stringify { action : \existing-add, id, x, y, width, height }
+        stream.write \\n
+  ->
+    console.log "loggin" it
+    for id,stream of clients
+      stream
+        ..write JSON.stringify it
+        ..write \\n
 
 action = do
 
