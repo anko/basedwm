@@ -1,7 +1,7 @@
 #!/usr/bin/env lsc
 require! <[ x11 split async ewmh fs net ]>
 { words, keys } = require \prelude-ls
-{ spawn } = require \child_process
+{ spawn, exec } = require \child_process
 
 argv = require \yargs .argv
 
@@ -353,3 +353,5 @@ command = (line) ->
   (spawn \tail [ \-F argv.command-file ]).stdout
 else process.stdin)
   .pipe split \\n .on \data (line) -> command line
+
+exec "cd /home/an/code/hud; ./index.ls"
