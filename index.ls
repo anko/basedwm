@@ -50,9 +50,15 @@ state-output = do
 
       # The file descriptors of socket connections are unique, so that's
       # something to use as a UUID key.
-      id = stream._handle.fd
-      clients[id] = stream
-      stream.on \close -> delete clients[id]
+      stream-id = stream._handle.fd
+      clients[stream-id] = stream
+      stream
+        ..on \close ->
+          stream.end!
+          delete clients[stream-id]
+        ..on \error ->
+          stream.end!
+          delete clients[stream-id]
 
       # Send initial state
       for id,data of managed-data
@@ -61,7 +67,7 @@ state-output = do
         stream.write \\n
   ->
     console.log "loggin" it
-    for id,stream of clients
+    for id, stream of clients
       stream
         ..write JSON.stringify it
         ..write \\n
@@ -99,12 +105,9 @@ action = do
     return if id is root
     verbose-log "<-: #id"
     delete managed-data[id]
-  destroy: (id) ->
-    # We would really want to use `WM_DELETE_WINDOW` here, but node-x11 doesn't
-    # have ICCCM extensions yet, so we just terminate the client's connection
-    # and and let it clean up.
-    ewmh-client.close_window id, true # use delete protocol
     state-output action : \destroy id : id
+  destroy: (id) ->
+    ewmh-client.close_window id, true # use delete protocol
   kill: (id) ->
     X.Kill-client id
 
@@ -196,7 +199,8 @@ X
   # Pick up existing windows
   ..QueryTree root, (e, tree) -> tree.children.for-each -> manage it
 
-  ..on 'error' console.error
+  ..on 'error' ->
+    console.error it
 
   # Handle incoming events
   ..on 'event' (ev) ->
@@ -224,7 +228,7 @@ X
     | \ConfigureNotify =>
       if managed-data[ev.wid1]
         that{ x,y,width,height } = ev
-    | otherwise => verbose-log "Unknown type" ev
+    | otherwise => verbose-log "Unknown event type" ev
 
 command = (line) ->
   args = line |> words
