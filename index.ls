@@ -342,6 +342,8 @@ command = (line) ->
     action.destroy focus
   | \exit =>
     exit!
+  | otherwise =>
+    console.log "Didn't understand command `#line`"
 
 handle-line = -> split \\n .on \data (line) -> command line
 input-streams = []
