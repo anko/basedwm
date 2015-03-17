@@ -196,8 +196,12 @@ X
         exit 1 'Error: another window manager already running.'
   ..Ungrab-server!
 
-  # Pick up existing windows
-  ..QueryTree root, (e, tree) -> tree.children.for-each -> manage it
+  # Pick up previously mapped windows.  These must have been mapped by another
+  # window manager instance previously.
+  ..QueryTree root, (e, tree) -> tree.children.for-each ->
+    X.Get-window-attributes it, (e, attrs) ->
+      if attrs.map-state
+        manage it
 
   ..on 'error' ->
     console.error it
