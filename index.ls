@@ -349,8 +349,7 @@ command = (line) ->
   | otherwise =>
     console.log "Didn't understand command `#line`"
 
-handle-line = -> split \\n .on \data (line) -> command line
-input-streams = []
-  ..push process.stdin
-  ..push (spawn \tail [ \-F argv.command-file ]).stdout if argv.command-file
-  ..for-each (.pipe handle-line!)
+(if argv.command-file
+  (spawn \tail [ \-F argv.command-file ]).stdout
+else process.stdin)
+  .pipe split \\n .on \data (line) -> command line
