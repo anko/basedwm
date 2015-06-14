@@ -63,7 +63,11 @@ state-output = do
       # Send initial state
       for id,data of managed-data
         { x, y, width, height } = data
-        stream.write JSON.stringify { action : \existing-add, id, x, y, width, height }
+        stream.write JSON.stringify {
+          action : \existing-add
+          id : Number id
+          x, y, width, height
+        }
         stream.write \\n
   ->
     console.log "loggin" it
@@ -249,9 +253,11 @@ command = (line) ->
     verbose-log "Moving #focus"
     x = args.shift! |> Number
     y = args.shift! |> Number
+    console.log focus, typeof! focus
     action.move focus, x, y
   | \move-all =>
     ids = keys managed-data
+          .map Number # because `keys` returns strings
     return unless ids.length
     verbose-log "Moving #focus"
     x = args.shift! |> Number
@@ -298,7 +304,7 @@ command = (line) ->
       ..y = y
     action.move drag.target, delta-x, delta-y
   | \pointer-move-all =>
-    ids = keys managed-data
+    ids = keys managed-data .map Number
     return unless ids.length
     x = args.shift! |> Number
     y = args.shift! |> Number
