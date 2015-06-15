@@ -356,13 +356,18 @@ command = (line) ->
   | otherwise =>
     console.log "Didn't understand command `#line`"
 
-input-stream = if argv.command-file
-  # Create if doesn't exist
-  if not fs.exists-sync that then mkfifo-sync argv.command-file, 8~600
+input-stream = do
 
-  (spawn \tail [ \-F that ]).stdout
+  mkfifo-stream = (path) ->
+    fs.unlink-sync path
+    mkfifo-sync path, 8~600
+    (spawn \tail [ \-F path ]).stdout
 
-else process.stdin
+  switch argv.command-file
+  | \- => process.stdin
+  | true => fallthrough
+  | undefined => mkfifo-stream "/tmp/basedwm#{process.env.DISPLAY}-cmd.fifo"
+  | otherwise => mkfifo-stream that
 
 input-stream .pipe split \\n .on \data (line) -> command line
 
