@@ -1,4 +1,5 @@
-index.js: index.ls
+bin/index.js: index.ls
+	@mkdir -p bin
 	echo '#!/usr/bin/env node' > $@
 	lsc --compile --print $< >> $@
 	chmod +x $@

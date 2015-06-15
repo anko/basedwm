@@ -5,18 +5,18 @@
   "main": "index.js",
   "scripts": {
     "prepublish": "make",
-    "start": "node index.js --",
+    "start": "node bin/index.js --",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "basedwm": "./index.js"
+    "basedwm": "./bin/index.js"
   },
   "preferGlobal": true,
   "os": [
     "linux"
   ],
   "files": [
-    "index.js"
+    "bin"
   ],
   "author": "An <an@cyan.io",
   "license": "ISC",
