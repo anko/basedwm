@@ -9,7 +9,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "basedwm": "./bin/index.js"
+    "basedwm": "./bin/index.js",
+    "basedc": "./bin/basedc"
   },
   "preferGlobal": true,
   "os": [
