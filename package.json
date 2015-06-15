@@ -1,7 +1,7 @@
 {
-  "name": "nwm2",
-  "version": "1.0.0",
-  "description": "",
+  "name": "basedwm",
+  "version": "0.1.0",
+  "description": "X window manager with infinite panning desktop",
   "main": "index.ls",
   "scripts": {
     "start": "./index.ls --",
