@@ -2,6 +2,7 @@
 require! <[ x11 split async ewmh fs net ]>
 { words, keys } = require \prelude-ls
 { spawn, exec } = require \child_process
+{ mkfifo-sync } = require \mkfifo
 
 argv = require \yargs .argv
 
@@ -355,9 +356,14 @@ command = (line) ->
   | otherwise =>
     console.log "Didn't understand command `#line`"
 
-(if argv.command-file
-  (spawn \tail [ \-F argv.command-file ]).stdout
-else process.stdin)
-  .pipe split \\n .on \data (line) -> command line
+input-stream = if argv.command-file
+  # Create if doesn't exist
+  if not fs.exists-sync that then mkfifo-sync argv.command-file, 8~600
+
+  (spawn \tail [ \-F that ]).stdout
+
+else process.stdin
+
+input-stream .pipe split \\n .on \data (line) -> command line
 
 exec "cd /home/an/code/hud; ./index.ls"
