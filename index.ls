@@ -370,5 +370,3 @@ input-stream = do
   | otherwise => mkfifo-stream that
 
 input-stream .pipe split \\n .on \data (line) -> command line
-
-exec "cd /home/an/code/hud; ./index.ls"
