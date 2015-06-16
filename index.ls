@@ -359,7 +359,7 @@ command = (line) ->
 input-stream = do
 
   mkfifo-stream = (path) ->
-    fs.unlink-sync path
+    if fs.exists-sync path then fs.unlink-sync path
     mkfifo-sync path, 8~600
     (spawn \tail [ \-F path ]).stdout
 
