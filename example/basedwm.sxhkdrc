@@ -1,0 +1,87 @@
+super + shift + q
+    basedc exit
+
+super + shift + c
+    basedc destroy
+
+super + h
+    basedc move-all 300 0
+super + j
+    basedc move-all 0 -300
+super + k
+    basedc move-all 0 300
+super + l
+    basedc move-all -300 0
+
+super + shift + h
+    basedc move-all 50 0
+super + shift + j
+    basedc move-all 0 -50
+super + shift + k
+    basedc move-all 0 50
+super + shift + l
+    basedc move-all -50 0
+
+~button1
+    basedc pointer-raise
+
+super + !button1
+    basedc pointer-move %i %i
+super + @button1
+    basedc reset
+
+
+# Pan with super+scroll
+super + button4
+    basedc move-all 0 20
+super + button5
+    basedc move-all 0 -20
+super + button6
+    basedc move-all 30 0
+super + button7
+    basedc move-all -30 0
+
+super + !button3
+    basedc pointer-resize %i %i
+super + @button3
+    basedc reset
+
+super + shift + !button1
+    basedc pointer-move-all %i %i
+super + shift + @button1
+    basedc reset
+
+super + Return
+    # terminal
+	st
+
+super + r
+    # launcher
+	dmenu_run -nb "#111" -nf "#0ff" -sb "#0ff" -sf "#000"
+
+super + shift + Return
+    # web browser
+	uzbl-browser
+
+super + alt + {c,f,t,g,p,i}
+	{chromium,firefox,tor-browser,gimp,mypaint,inkscape}
+
+super + shift + r
+    # make sxhkd reload its configuration files
+	pkill -USR1 -x sxhkd
+
+XF86Audio{Raise,Lower}Volume
+    amixer set Master 3%{+,-} unmute && \
+    echo -n update | socat - UNIX-CONNECT:/tmp/volumechange.sock
+XF86AudioMute
+    amixer set Master 0 && \
+    echo -n update | socat - UNIX-CONNECT:/tmp/volumechange.sock
+
+XF86MonBrightness{Up,Down}
+    xbacklight {-inc,-dec} 5%
+
+# power controls
+super + ctrl + alt + h
+    systemctl hibernate
+super + ctrl + alt + r
+    systemctl reboot
