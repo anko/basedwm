@@ -1,12 +1,12 @@
-# basedwm ![](https://img.shields.io/badge/stability-experimental-red.svg?style=flat-square)
+# basedwm [![](https://img.shields.io/npm/v/basedwm.svg)][1]
 
-Minimalistic [X window manager][1] in [LiveScript][2], with an infinite panning
-desktop.  Controlled by [named pipe][3].  Emits focus events and window
-positions on a [socket][4].
+Minimalistic [X window manager][2] in [LiveScript][3], with an infinite panning
+desktop.  Controlled by [named pipe][4].  Emits focus events and window
+positions on a [socket][5].
 
 ## Install
 
-You only need [Node.js][5] (or [io.js][6]) to run the basic WM.
+You only need [Node.js][6] (or [io.js][7]) to run the basic WM.
 
       sudo npm i -g basedwm
 
@@ -22,14 +22,14 @@ render window decorations.
 
 ### Recommendations
 
-To bind commands to keyboard controls, I recommend [sxhkd][7].  A suitable
-example config is in [`example/basedwm.sxhkdrc`][8].
+To bind commands to keyboard controls, I recommend [sxhkd][8].  A suitable
+example config is in [`example/basedwm.sxhkdrc`][9].
 
 ### Details
 
 Basedwm is controlled through a named pipe, by default at
 `/tmp/basedwm:0-cmd.fifo` (where the `:0` is the contents of the `$DISPLAY`
-[env variable][9]).  The program `basedc` is provided for convenience; it just
+[env variable][10]).  The program `basedc` is provided for convenience; it just
 echoes its arguments into that pipe.
 
 Some commands are **stateless** and run immediately:
@@ -63,17 +63,17 @@ next pointer command will be a separate action.
 
 ### Recommendations
 
-[Hudkit][10] was written for this.  I'll get around to uploading my setup
+[Hudkit][11] was written for this.  I'll get around to uploading my setup
 eventually, but the basic idea is to create a Node server that `net.connect`s
 to the WM state socket, dumps the events into a websocket and serves up a page
-that uses [D3][11] to render borders and a minimap.  [Screenshot here][12].
+that uses [D3][12] to render borders and a minimap.  [Screenshot here][13].
 
 <!-- TODO publish a more complete hud example -->
 
 ### Details
 
 Basedwm outputs window positions on a socket in `/tmp/wmstate.sock`, as
-newline-delimited [JSON][13] objects.  Every object has a property `id` with
+newline-delimited [JSON][14] objects.  Every object has a property `id` with
 the window's ID, and a property `action` representing the event type.
 
 The possible `action`s and their additional properties are:
@@ -102,28 +102,29 @@ Yes.
 
 ## Inspirations & thankyous
 
-Intended as a modern reinterpretation of [swm][14], with the big virtual
+Intended as a modern reinterpretation of [swm][15], with the big virtual
 desktop taken to the extreme.  Exposing controls on a pipe/socket interface and
-outsourcing controls to [sxhkd][15] are ideas from [bspwm][16].
+outsourcing controls to [sxhkd][16] are ideas from [bspwm][17].
 
 ## License
 
-[ISC][17].
+[ISC][18].
 
-[1]: https://en.wikipedia.org/wiki/X_window_manager
-[2]: http://livescript.net
-[3]: http://en.wikipedia.org/wiki/Named_pipe
-[4]: https://en.wikipedia.org/wiki/Unix_domain_socket
-[5]: https://nodejs.org/
-[6]: https://iojs.org/
-[7]: https://github.com/baskerville/sxhkd
-[8]: example/basedwm.sxhkdrc
-[9]: https://en.wikipedia.org/wiki/Environment_variable
-[10]: https://github.com/anko/hudkit
-[11]: http://d3js.org/
-[12]: https://cloud.githubusercontent.com/assets/5231746/8208678/c40d95a6-1500-11e5-9ecf-84aece17044e.png
-[13]: http://json.org/
-[14]: https://en.wikipedia.org/wiki/Swm
-[15]: https://github.com/baskerville/sxhkd
-[16]: https://github.com/baskerville/bspwm
-[17]: LICENSE
+[1]: https://www.npmjs.com/package/basedwm
+[2]: https://en.wikipedia.org/wiki/X_window_manager
+[3]: http://livescript.net
+[4]: http://en.wikipedia.org/wiki/Named_pipe
+[5]: https://en.wikipedia.org/wiki/Unix_domain_socket
+[6]: https://nodejs.org/
+[7]: https://iojs.org/
+[8]: https://github.com/baskerville/sxhkd
+[9]: example/basedwm.sxhkdrc
+[10]: https://en.wikipedia.org/wiki/Environment_variable
+[11]: https://github.com/anko/hudkit
+[12]: http://d3js.org/
+[13]: https://cloud.githubusercontent.com/assets/5231746/8208678/c40d95a6-1500-11e5-9ecf-84aece17044e.png
+[14]: http://json.org/
+[15]: https://en.wikipedia.org/wiki/Swm
+[16]: https://github.com/baskerville/sxhkd
+[17]: https://github.com/baskerville/bspwm
+[18]: LICENSE
