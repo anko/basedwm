@@ -2,7 +2,7 @@
   "name": "basedwm",
   "version": "0.1.1",
   "description": "X window manager with infinite panning desktop",
-  "main": "index.js",
+  "main": "bin/index.js",
   "scripts": {
     "prepublish": "make",
     "start": "node bin/index.js --",
