@@ -24,7 +24,7 @@
   "license": "ISC",
   "dependencies": {
     "async": "^0.9.0",
-    "ewmh": "git+https://git@github.com/santigimeno/node-ewmh.git#f58a0b5c64c8d5ff8c98590cc4eecf4f174a458e",
+    "ewmh": "^0.3.0",
     "highland": "^2.5.1",
     "mkfifo": "^0.1.2",
     "prelude-ls": "^1.1.1",
