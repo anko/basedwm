@@ -1,10 +1,15 @@
+all: bin/index.js wm-kit.js
+
 bin/index.js: index.ls
 	@mkdir -p bin
 	echo '#!/usr/bin/env node' > $@
 	lsc --compile --print $< >> $@
 	chmod +x $@
 
-clean:
-	@rm -f index.js
+wm-kit.js: wm-kit.ls
+	lsc --compile --print $< > $@
 
-.PHONY: clean
+clean:
+	@rm -f bin/index.js wm-kit.js
+
+.PHONY: all clean
