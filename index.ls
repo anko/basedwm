@@ -98,7 +98,10 @@ wm.event-stream .on \data ({ type, window }) ->
     # action.resize ev.wid, ev.width, ev.height
   | \DestroyNotify => fallthrough
   | \UnmapNotify =>
-    windows .= filter (.id isnt window.id) # TODO opt; splice instead
+    for i til windows.length
+      if windows[i].id is window.id
+        windows.splice i, 1
+        break
     if focus.id is window.id
       verbose-log "focusing root"
       focus-on wm.root
