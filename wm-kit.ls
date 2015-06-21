@@ -113,7 +113,9 @@ wrap-display = (display) ->
       cb!
 
     resize-by = (dx, dy, cb=->) ->
-      e, { width, height } <- get-geometry!
+      e, geom <- get-geometry!
+      if e then return cb e
+      { width, height } = geom
       if e then return cb e
       new-w = width + dx
       new-h = height + dy
