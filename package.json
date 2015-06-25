@@ -1,6 +1,6 @@
 {
   "name": "basedwm",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "X window manager with infinite panning desktop",
   "main": "bin/index.js",
   "scripts": {
