@@ -26,12 +26,6 @@ wrap-display = (display) ->
   interaction-stream = _!
 
   init-window-data = (id) !->
-    e, attr <- X.Get-window-attributes id
-    throw e if e
-
-    # Subscribe to window enter events
-    #X.Change-window-attributes id, event-mask : x11.event-mask.EnterWindow
-
     # Remember initial geometry
     e, geom <- X.Get-geometry id
     { x-pos : x, y-pos : y, width, height } = geom
@@ -59,9 +53,8 @@ wrap-display = (display) ->
 
     # Pick up previously mapped windows.  These must have been mapped by
     # another window manager instance previously.
-    ..QueryTree root-window, (e, tree) -> tree.children.for-each ->
-      X.Get-window-attributes it, (e, attrs) ->
-        init-window-data it
+    ..QueryTree root-window, (e, tree) ->
+      tree.children.for-each init-window-data
 
   wrap-window = (id) ->
 
