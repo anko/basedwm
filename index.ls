@@ -59,6 +59,43 @@ focus-on = (window) ->
 
 on-top-windows = []
 
+consider-managing = (window) ->
+  e, attr <- window.get-attributes!
+  throw e if e
+
+  if not attr.override-redirect # don't pick up popups
+
+    e, wm-class <- window.get-wm-class!
+
+    if wm-class.class is \Hudkit
+      window.raise-to-below on-top-windows.0
+      on-top-windows.push window
+
+    else
+      windows.push window
+
+      window.subscribe-to \EnterWindow
+
+      e, { x, y, width, height } <- window.get-geometry!
+      throw e if e
+      state-output {
+        action : \add
+        id : window.id
+        x, y, width, height
+      }
+
+      window.raise-to-below on-top-windows.0
+      window.set-input-focus!
+      focus-on window
+
+# Pick up existing mapped windows and manage them if necessary
+wm .all-windows (e, wins) ->
+  throw e if e
+  w <- wins.for-each
+  e, attr <- w.get-attributes!
+  throw e if e
+  if attr.map-state then consider-managing w
+
 _ wm.interaction-stream
   #.filter -> windows.some (.id == it)
   .each state-output
@@ -68,32 +105,7 @@ wm.event-stream .on \data ({ type, window }) ->
   | \MapRequest =>
     e <- window.map!
     throw e if e
-    e, attr <- window.get-attributes!
-    throw e if e
-
-    if not attr.override-redirect # don't pick up popups
-
-      e, wm-class <- window.get-wm-class!
-      if wm-class.class is \Hudkit
-        window.raise-to-below on-top-windows.0
-        on-top-windows.push window
-      else
-        windows.push window
-
-        window.subscribe-to \EnterWindow
-
-        e, { x, y, width, height } <- window.get-geometry!
-        throw e if e
-        state-output {
-          action : \add
-          id : window.id
-          x, y, width, height
-        }
-
-        window.raise-to-below on-top-windows.0
-        window.set-input-focus!
-        focus-on window
-
+    consider-managing window
   | \ConfigureRequest => # ignore
     # action.resize ev.wid, ev.width, ev.height
   | \DestroyNotify => fallthrough

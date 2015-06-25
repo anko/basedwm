@@ -193,6 +193,10 @@ wrap-display = (display) ->
       return it
     #.filter (.name in interesting-events)
     .map wrap-event
+  all-windows : (cb) ->
+    X.QueryTree root-window, (e, tree) ->
+      if e then return cb e
+      cb null tree.children.map wrap-window
   window-under-pointer : (cb) ->
     e, res <- X.Query-pointer root-window
     if e then return cb e
