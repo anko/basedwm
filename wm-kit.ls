@@ -56,7 +56,11 @@ wrap-display = (display) ->
     ..QueryTree root-window, (e, tree) ->
       tree.children.for-each init-window-data
 
+  wrapped-window-cache = {}
+
   wrap-window = (id) ->
+
+    if wrapped-window-cache[id] then return that
 
     map = (cb=->) -> X.Map-window id ; cb!
 
@@ -156,7 +160,7 @@ wrap-display = (display) ->
       | 0 => cb null [ "" "" ] # No WM_CLASS set
       | _ => cb "Unexpected non-string WM_CLASS"
 
-    return {
+    return wrapped-window-cache[id] = {
       id, map, get-geometry, get-attributes, move-to, resize-to, move-by,
       resize-by, set-input-focus, raise-to-below, close, kill, subscribe-to,
       get-wm-class
@@ -173,6 +177,7 @@ wrap-display = (display) ->
     DestroyNotify : ->
       interaction-stream.write action : \destroy id : it.wid
       delete window-data[it.wid]
+      delete wrapped-window-cache[it.wid]
 
   #interesting-events = <[
   #  ConfigureNotify
