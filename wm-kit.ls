@@ -179,15 +179,6 @@ wrap-display = (display) ->
       delete window-data[it.wid]
       delete wrapped-window-cache[it.wid]
 
-  #interesting-events = <[
-  #  ConfigureNotify
-  #  ConfigureRequest
-  #  DestroyNotify
-  #  EnterNotify
-  #  MapRequest
-  #  UnmapNotify
-  #]>
-
   X.on \error -> console.error it
 
   root : wrap-window root-window
