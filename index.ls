@@ -124,55 +124,49 @@ drag =
   target : null
   start  : x : 0 y : 0
 
-command = (line) ->
-  args = line |> words
-  return unless args.length
-  switch args.shift!
-  | \resize =>
+commands = do
+  commands = {}
+
+  specify = (name, ...types, action) ->
+    commands[name] = (args) ->
+      if args.length isnt types.length
+        return console.error "Invalid number of arguments to command #name"
+      args-converted = []
+      for a,i in args
+        try
+          converted-arg = global[types[i]] a
+          args-converted.push converted-arg
+        catch e
+          console.error "Could not interpret #a as #{types[i]}"
+      action.apply null args-converted
+
+  specify \resize \Number \Number ->
     return if focus.id is root.id
-    verbose-log "Moving #focus"
-    x = args.shift! |> Number
-    y = args.shift! |> Number
-    focus.resize-by x, y
-  | \move =>
+    focus.resize-by &0, &1
+  specify \move   \Number \Number ->
     return if focus.id is root.id
-    verbose-log "Moving #focus"
-    x = args.shift! |> Number
-    y = args.shift! |> Number
-    focus.move-by x, y
-  | \move-all =>
+    focus.move-by &0, &1
+  specify \move-all \Number \Number (x, y) ->
     return unless windows.length
-    verbose-log "Moving #focus"
-    x = args.shift! |> Number
-    y = args.shift! |> Number
-    # Move every window
-    # (In parallel for efficiency)
     async.each do
       windows
-      (w, cb) ->
-        w.move-by x, y, cb
+      (w, cb) -> w.move-by x, y, cb
       -> # We don't care when it finishes, or about errors.
-  | \pointer-resize =>
+  specify \pointer-resize \Number \Number (x, y) ->
     return if focus.id is root.id
-    verbose-log "Resizing #focus"
-    x = args.shift! |> Number
-    y = args.shift! |> Number
     if drag.target is null
       drag
         ..target  = focus
         ..start.x = x
         ..start.y = y
-    delta-x   = x - drag.start.x
-    delta-y   = y - drag.start.y
+    delta-x = x - drag.start.x
+    delta-y = y - drag.start.y
     drag.start
       ..x = x
       ..y = y
     drag.target.resize-by delta-x, delta-y
-  | \pointer-move =>
+  specify \pointer-move \Number \Number (x, y) ->
     return if focus.id is root.id
-    verbose-log "Pointer-moving #focus"
-    x = args.shift! |> Number
-    y = args.shift! |> Number
     if drag.target is null
       drag
         ..target = focus
@@ -180,15 +174,12 @@ command = (line) ->
         ..start.y = y
     delta-x   = x - drag.start.x
     delta-y   = y - drag.start.y
-    verbose-log "Moving #{drag.target} by #delta-x,#delta-y"
     drag.start
       ..x = x
       ..y = y
     drag.target.move-by delta-x, delta-y
-  | \pointer-move-all =>
+  specify \pointer-move-all \Number \Number (x, y) ->
     return if focus.id is root.id
-    x = args.shift! |> Number
-    y = args.shift! |> Number
     if drag.start.x is null
       drag.start
         ..x = x
@@ -204,32 +195,32 @@ command = (line) ->
       windows
       (w, cb) -> w.move-by delta-x, delta-y, cb
       -> # We don't care when it finishes, or about errors.
-  | \reset =>
-    verbose-log "RESET"
+        specify \reset ->
+  specify \reset ->
     drag
       ..target = null
       ..start
         ..x = null
         ..y = null
-  | \raise =>
-    verbose-log "Raising #focus"
-    focus.raise-to-below on-top-windows.0
-  | \pointer-raise =>
-    # Find and raise the window under the pointer
+  specify \raise -> focus.raise-to-below on-top-windows.0
+  specify \pointer-raise -> # Find and raise the window under the pointer
     e, w <- wm.window-under-pointer!
     throw e if e
-    if w
-      verbose-log "Raising #w"
-      w.raise-to-below on-top-windows.0
-  | \kill =>
-    verbose-log "Killing #focus"
-    focus.kill!
-  | \destroy =>
-    verbose-log "Destroying #focus"
-    focus.close!
-  | \exit => process.exit!
-  | otherwise =>
-    console.error "Didn't understand command `#line`"
+    if w then w.raise-to-below on-top-windows.0
+  specify \kill -> focus.kill!
+  specify \destroy -> focus.close!
+  specify \exit -> process.exit!
+
+  commands # return
+
+
+run-command = (line) ->
+  args = line |> words
+  return unless args.length
+  command-name = args.shift!
+  if commands[command-name]
+    that args
+  else console.error "No such command: #command-name"
 
 input-stream = do
 
@@ -244,4 +235,4 @@ input-stream = do
   | undefined => mkfifo-stream "/tmp/basedwm#{process.env.DISPLAY}-cmd.fifo"
   | otherwise => mkfifo-stream that
 
-input-stream .pipe split \\n .on \data (line) -> command line
+input-stream .pipe split \\n .on \data (line) -> run-command line
