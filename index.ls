@@ -174,7 +174,7 @@ commands = do
     drag.target.resize-by delta-x, delta-y
   specify \pointer-move \Number \Number (x, y) ->
     return if focus.id is root.id
-    if drag.target is null then drag-start x, y, focus
+    if drag.target is null then drag-update x, y, focus
     delta-x   = x - drag.start.x
     delta-y   = y - drag.start.y
     drag-update x, y
