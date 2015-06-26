@@ -120,11 +120,12 @@ wm.event-stream .on \data ({ type, window }) ->
   | \EnterNotify => focus-on window
   | \ClientMessage => # nothing
 
-drag =
-  target : null
-  start  : x : 0 y : 0
-
 commands = do
+
+  drag =
+    target : null
+    start  : x : 0 y : 0
+
   commands = {}
 
   specify = (name, ...types, action) ->
