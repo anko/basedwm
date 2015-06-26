@@ -125,6 +125,18 @@ commands = do
   drag =
     target : null
     start  : x : 0 y : 0
+  drag-update = (x, y, target) ->
+    drag
+      ..target = target if target
+      ..start
+        ..x = x
+        ..y = y
+  drag-reset = ->
+    drag
+      ..target = null
+      ..start
+        ..x = null
+        ..y = null
 
   commands = {}
 
@@ -155,54 +167,31 @@ commands = do
       -> # We don't care when it finishes, or about errors.
   specify \pointer-resize \Number \Number (x, y) ->
     return if focus.id is root.id
-    if drag.target is null
-      drag
-        ..target  = focus
-        ..start.x = x
-        ..start.y = y
+    if drag.target is null then drag-update x, y, focus
     delta-x = x - drag.start.x
     delta-y = y - drag.start.y
-    drag.start
-      ..x = x
-      ..y = y
+    drag-update x, y
     drag.target.resize-by delta-x, delta-y
   specify \pointer-move \Number \Number (x, y) ->
     return if focus.id is root.id
-    if drag.target is null
-      drag
-        ..target = focus
-        ..start.x = x
-        ..start.y = y
+    if drag.target is null then drag-start x, y, focus
     delta-x   = x - drag.start.x
     delta-y   = y - drag.start.y
-    drag.start
-      ..x = x
-      ..y = y
+    drag-update x, y
     drag.target.move-by delta-x, delta-y
   specify \pointer-move-all \Number \Number (x, y) ->
     return if focus.id is root.id
-    if drag.start.x is null
-      drag.start
-        ..x = x
-        ..y = y
+    if drag.start.x is null then drag-update x, y
     delta-x   = (x - drag.start.x) * 3
     delta-y   = (y - drag.start.y) * 3
     verbose-log "Moving all by #delta-x,#delta-y"
-    drag.start
-      ..x = x
-      ..y = y
-    # Move every window
+    drag-update x, y
     async.each do
       windows
       (w, cb) -> w.move-by delta-x, delta-y, cb
       -> # We don't care when it finishes, or about errors.
         specify \reset ->
-  specify \reset ->
-    drag
-      ..target = null
-      ..start
-        ..x = null
-        ..y = null
+  specify \reset -> drag-reset!
   specify \raise -> focus.raise-to-below on-top-windows.0
   specify \pointer-raise -> # Find and raise the window under the pointer
     e, w <- wm.window-under-pointer!
@@ -213,7 +202,6 @@ commands = do
   specify \exit -> process.exit!
 
   commands # return
-
 
 run-command = (line) ->
   args = line |> words
