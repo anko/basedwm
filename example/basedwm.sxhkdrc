@@ -24,6 +24,10 @@ super + shift + l
 
 ~button1
     basedc pointer-raise
+@button1
+    basedc reset
+@button3
+    basedc reset
 
 super + !button1
     basedc pointer-move %i %i
@@ -51,23 +55,23 @@ super + shift + !button1
 super + shift + @button1
     basedc reset
 
+# terminal
 super + Return
-    # terminal
-	st
+	evilvte
 
+# launcher
 super + r
-    # launcher
 	dmenu_run -nb "#111" -nf "#0ff" -sb "#0ff" -sf "#000"
 
+# web browser
 super + shift + Return
-    # web browser
 	uzbl-browser
 
 super + alt + {c,f,t,g,p,i}
 	{chromium,firefox,tor-browser,gimp,mypaint,inkscape}
 
+# make sxhkd reload its configuration files
 super + shift + r
-    # make sxhkd reload its configuration files
 	pkill -USR1 -x sxhkd
 
 XF86Audio{Raise,Lower}Volume
@@ -85,3 +89,5 @@ super + ctrl + alt + h
     systemctl hibernate
 super + ctrl + alt + r
     systemctl reboot
+super + ctrl + alt + q
+    systemctl poweroff
