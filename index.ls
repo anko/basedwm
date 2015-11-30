@@ -181,17 +181,18 @@ commands = do
     drag.target.move-by delta-x, delta-y
   specify \pointer-move-all \Number \Number (x, y) ->
     return if focus.id is root.id
-    if drag.start.x is null then drag-update x, y
-    delta-x   = (x - drag.start.x) * 3
-    delta-y   = (y - drag.start.y) * 3
+    if drag.target is null then drag-update x, y, focus
+    delta-x   = (x - drag.start.x) * 2
+    delta-y   = (y - drag.start.y) * 2
     verbose-log "Moving all by #delta-x,#delta-y"
     drag-update x, y
     async.each do
       windows
       (w, cb) -> w.move-by delta-x, delta-y, cb
       -> # We don't care when it finishes, or about errors.
-        specify \reset ->
-  specify \reset -> drag-reset!
+  specify \reset ->
+    verbose-log "drag reset"
+    drag-reset!
   specify \raise -> focus.raise-to-below on-top-windows.0
   specify \pointer-raise -> # Find and raise the window under the pointer
     e, w <- wm.window-under-pointer!
